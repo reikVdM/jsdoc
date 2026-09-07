@@ -33,7 +33,7 @@
     "lodash": "^4.18.1",
     "lodash-es": "^4.18.1",
     "lucide": "^1.41.0",
-    "mock-fs": "^5.5.0",
+    "mock-tmp": "^0.0.4",
     "prettier": "^3.9.6",
     "sass-embedded": "^1.104.0",
     "tinyglobby": "^0.2.17"

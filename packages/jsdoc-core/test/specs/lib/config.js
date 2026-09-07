@@ -14,19 +14,32 @@
   limitations under the License.
 */
 
-import mockFs from 'mock-fs'; // eslint-disable-line simple-import-sort/imports
+import { chdir, cwd } from 'node:process';
+
 import { defaultLoaders } from 'cosmiconfig';
+import mocktmp from 'mock-tmp';
 
 import * as config from '../../../lib/config.js';
 
+const ORIGINAL_CWD = cwd();
+
+function mock(mockObj) {
+  const tmpdir = mocktmp(mockObj);
+
+  chdir(tmpdir);
+
+  return tmpdir;
+}
+
 describe('@jsdoc/core/lib/config', () => {
-  // Ensure that YAML parser is loaded before we run any tests. `cosmiconfig` tries to load it
-  // lazily, but that doesn't work when the file system is mocked.
   beforeAll(() => {
     defaultLoaders['.yaml']('fakefile.yaml', 'file: []');
   });
 
-  afterEach(() => mockFs.restore());
+  afterEach(() => {
+    mocktmp.reset();
+    chdir(ORIGINAL_CWD);
+  });
 
   it('is an object', () => {
     expect(config).toBeObject();
@@ -38,7 +51,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('returns an object with `config` and `filepath` properties', async () => {
-      mockFs({
+      mock({
         'conf.json': '{}',
       });
 
@@ -49,7 +62,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('loads settings from the specified filepath if there is one', async () => {
-      mockFs({
+      mock({
         'conf.json': '{"foo":"bar"}',
       });
 
@@ -59,7 +72,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('finds the config file when no filepath is specified', async () => {
-      mockFs({
+      mock({
         'package.json': '{"jsdoc":{"foo":"bar"}}',
       });
 
@@ -69,7 +82,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('parses JSON config files that have an extension and contain comments', async () => {
-      mockFs({
+      mock({
         '.jsdocrc.json': '// comment\n{"foo":"bar"}',
       });
 
@@ -79,7 +92,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('parses JSON files that start with a BOM', async () => {
-      mockFs({
+      mock({
         '.jsdocrc.json': '\uFEFF{"foo":"bar"}',
       });
 
@@ -89,7 +102,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('parses YAML files that start with a BOM', async () => {
-      mockFs({
+      mock({
         '.jsdocrc.yaml': '\uFEFF{"foo":"bar"}',
       });
 
@@ -99,7 +112,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('provides the default config if the user config is an empty object', async () => {
-      mockFs({
+      mock({
         '.jsdocrc.json': '{}',
       });
 
@@ -115,7 +128,7 @@ describe('@jsdoc/core/lib/config', () => {
     });
 
     it('merges nested defaults with nested user settings as expected', async () => {
-      mockFs({
+      mock({
         '.jsdocrc.json': '{"tags":{"foo":"bar"}}',
       });
 
